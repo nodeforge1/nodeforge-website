@@ -19,38 +19,31 @@ const transporter = nodemailer.createTransport({
 // Route to create a Stripe checkout session
 router.post("/create-checkout-session", async (req, res) => {
   try {
-    const { line_items, order_description, shippingInfo } = req.body;
+    const { line_items, order_description, shippingInfo, customer } = req.body;
+
 
     if (!line_items || !Array.isArray(line_items) || line_items.length === 0) {
       return res.status(400).json({ message: "Invalid product details" });
     }
 
     // Calculate total price
-    const totalAmount = line_items.reduce(
-      (sum, item) => sum + (item.price_data.unit_amount / 100) * (item.quantity || 1),
-      0
-    );
+    const totalAmountUSD = line_items.reduce((sum, item) => {
+      return sum + (item.price_data.unit_amount / 100) * (item.quantity || 1);
+    }, 0);
 
     // Generate a unique order ID
     const orderID = "ORD" + Date.now();
 
-    // Create a new order in the database with 'Pending' payment status
+    // Create an order with 'Pending' status
     const order = new Order({
       orderID,
       order_description,
-      shippingInfo: {
-        firstName: shippingInfo.firstName,
-        lastName: shippingInfo.lastName,
-        phone: shippingInfo.phone,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        state: shippingInfo.state,
-        zipCode: shippingInfo.zipCode,
-        country: shippingInfo.country,
-        email: shippingInfo.email, // ensure email is stored here
-      },
-      totalPrice: totalAmount,
-      orderStatus: "Pending",
+      shippingInfo,
+      customer,
+      totalPrice: totalAmountUSD,
+      orderStatus: "pending",
+      paymentMethod: "crypto",
+      subtotal: totalAmountUSD,
       warranty: "2 years",
       shippingPolicy: "Free shipping on orders above $500",
       customerSupport: "24/7 Customer support via Live chat and Telegram",

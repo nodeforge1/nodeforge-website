@@ -3,13 +3,14 @@ const Order = require("../models/Order");
 
 // Hardcoded admin credentials (For production, store in a database or use environment variables)
 const ADMIN_CREDENTIALS = {
-  email: "Node@example.com",
-  password: "admin123",
+  email: process.env.ADMIN_EMAIL || "",
+  password: process.env.ADMIN_PASSWORD || "",
 };
 
 // Admin login
 const adminLogin = (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
     req.session.admin = true;

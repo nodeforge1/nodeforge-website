@@ -31,7 +31,7 @@ export default function CryptoPayment({
     payment_id: string;
   }>();
   const [isProcessing, setIsProcessing] = useState(false);
-  const { getTotalPrice } = useCartStore();
+  const { items, getTotalPrice } = useCartStore();
   const [error, setError] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("ethbase");
   const [showInstructions, setShowInstructions] = useState(false);
@@ -44,7 +44,26 @@ export default function CryptoPayment({
     setIsProcessing(true);
     setError(false);
 
+    const products = items.map((item: any) => {
+      return {
+        productId: item._id,
+        image: item.image,
+        name: item.name,
+        quantity: item.quantity,
+        basePrice: item.totalPrice,
+        warranty: "1year",
+        configuration: {
+          software: item.config.software,
+          ram: item.config.ram,
+          storage: item.config.storage,
+          processor: item.config.processor
+        }
+      }
+    })
+
     try {
+
+      // console.log(object)
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/create-crypto-payment`,
         {
@@ -56,7 +75,7 @@ export default function CryptoPayment({
               orderID: `${Date.now().toString()}`,
               customer,
               shippingInfo,
-              products: productData,
+              products,
               pay_currency: selectedCurrency,
               order_description: `${productData.map((item: any) => { item.name, item.quantity }).join(", ")} Total Price: ${getTotalPrice()}`,
               billingInfo: {

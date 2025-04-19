@@ -17,6 +17,7 @@ exports.createOrder = async (req, res) => {
         missingFields
       });
     }
+    
 
     // Ensure products array is not empty
     if (req.body.products.length === 0) {

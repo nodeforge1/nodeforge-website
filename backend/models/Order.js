@@ -36,23 +36,11 @@ const orderSchema = new mongoose.Schema(
         name: { type: String, required: true },
         quantity: { type: Number, required: true, default: 1 },
         basePrice: { type: Number, required: true },
-        configuration: {
-          software: {
-            name: { type: String },
-            price: { type: Number }
-          },
-          ram: {
-            size: { type: String },
-            price: { type: Number }
-          },
-          storage: {
-            type: { type: String },
-            price: { type: Number }
-          },
-          processor: {
-            model: { type: String },
-            price: { type: Number }
-          }
+        configuration:  {
+          software: { type: String },
+          ram: { type: String },
+          storage: { type: String },
+          processor: { type: String }
         },
         image: { type: String },
         warranty: { type: String }

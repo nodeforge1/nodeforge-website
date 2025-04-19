@@ -19,9 +19,9 @@ app.use(bodyParser.json());
 // Configure CORS
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://newnode-sr37.onrender.com",
-    "https://nodebridges.netlify.app",
+    process.env.DOMAIN,
+    process.env.CLIENT_URL,
+    process.env.CLIENT_URL_2,
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"],

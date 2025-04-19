@@ -114,7 +114,12 @@ export default function PaymentOptions({ amount, onSuccess }: PaymentOptionsProp
       quantity: item.quantity,
       basePrice: item.totalPrice,
       warranty: "1year",
-      configuration: item.config
+      configuration: {
+        software: item.config.software,
+        ram: item.config.ram,
+        storage: item.config.storage,
+        processor: item.config.processor
+      }
     }
   })
   const customer = {
@@ -196,7 +201,7 @@ export default function PaymentOptions({ amount, onSuccess }: PaymentOptionsProp
           ],
         }),
       });
-
+      console.log(response)
       if (!response.ok) throw new Error("Failed to create checkout session");
 
       const { url } = await response.json();

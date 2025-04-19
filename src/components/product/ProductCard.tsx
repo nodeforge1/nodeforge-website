@@ -86,7 +86,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         transition={{ duration: 0.3 }}
       >
         <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-        <p className="text-gray-600 mb-4">{product.description}</p>
+        <p className="text-gray-600 mb-4">{`${product.description.length > 100 ? `${product.description.slice(0, 100)}...` : product.description.slice(0, 100)}`}</p>
 
         <ProductOptions config={config} onChange={setConfig} options={product.options}/>
 

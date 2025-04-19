@@ -11,7 +11,7 @@ import { OrderStatus, useOrders } from "../../context/OrderContext";
 type OrderStatusSelectProps = {
   orderId: string;
   currentStatus: OrderStatus;
-  onUpdateSuccess: () => void; // Callback to refresh orders
+  onUpdateSuccess: (status: OrderStatus) => void; // Callback to refresh orders
 };
 
 export function OrderStatusSelect({ orderId, currentStatus }: OrderStatusSelectProps) {

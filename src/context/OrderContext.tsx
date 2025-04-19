@@ -6,6 +6,7 @@ export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | '
 export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 export type PaymentMethod = 'credit_card' | 'paypal' | 'crypto' | 'bank_transfer';
 
+
 export type OrderProduct = {
   productId: string;
   name: string;
@@ -75,13 +76,24 @@ export type OrdersResponse = {
 
 type OrderContextType = {
   orders: OrderItem[];
+  loading: boolean;
+  error: string | null;
+  setPageSize: (size: number) => void;
+  pagination: {
+    page: number;
+    pages: number;
+    total: number;
+    limit: number;
+  };
   addOrder: (order: Omit<OrderItem, '_id' | 'createdAt' | 'updatedAt' | '__v'>) => Promise<void>;
   updateOrder: (id: string, updates: Partial<OrderItem>) => Promise<void>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   getOrder: (id: string) => OrderItem | undefined;
-  fetchOrders: () => Promise<void>;
+  fetchOrders: (page?: number, limit?: number) => Promise<void>;
+  setPage: (page: number) => void;
 };
+
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
@@ -95,14 +107,67 @@ export const useOrders = () => {
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+    limit: 20, // Default page size
+  });
 
-  const fetchOrders = async () => {
+  // const fetchOrders = async () => {
+  //   try {
+  //     const response = await axios.get<OrdersResponse>(`${import.meta.env.VITE_API_URL}/orders`);
+  //     setOrders(response.data.orders);
+  //   } catch (error) {
+  //     toast.error('Failed to fetch orders');
+  //     console.error('Error fetching orders:', error);
+  //   }
+  // };
+  const fetchOrders = async (page = pagination.page, limit = pagination.limit) => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get<OrdersResponse>(`${import.meta.env.VITE_API_URL}/orders`);
+      const response = await axios.get<OrdersResponse>(
+        `${import.meta.env.VITE_API_URL}/orders`,
+        {
+          params: {
+            page,
+            limit,
+          },
+        }
+      );
+
+      if (!response.data.success) {
+        throw new Error('Failed to fetch orders');
+      }
+
       setOrders(response.data.orders);
+      setPagination({
+        page: response.data.page,
+        pages: response.data.pages,
+        total: response.data.total,
+        limit,
+      });
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to fetch orders');
       toast.error('Failed to fetch orders');
       console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setPage = (page: number) => {
+    if (page >= 1 && page <= pagination.pages) {
+      fetchOrders(page);
+    }
+  };
+
+  const setPageSize = (size: number) => {
+    if (size > 0) {
+      fetchOrders(1, size);
     }
   };
 
@@ -111,61 +176,105 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addOrder = async (order: Omit<OrderItem, '_id' | 'createdAt' | 'updatedAt' | '__v'>) => {
+    setLoading(true);
     try {
-      const response = await axios.post<{ order: OrderItem }>(
+      const response = await axios.post<{ success: boolean; order: OrderItem }>(
         `${import.meta.env.VITE_API_URL}/orders`,
         order
       );
-      setOrders((prevOrders) => [...prevOrders, response.data.order]);
+
+      if (!response.data.success) {
+        throw new Error('Failed to add order');
+      }
+
+      setOrders((prev) => [response.data.order, ...prev]);
       toast.success('Order added successfully');
+      // Refresh pagination data
+      await fetchOrders(pagination.page, pagination.limit);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to add order');
       toast.error('Failed to add order');
       console.error('Error adding order:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+
   const updateOrder = async (id: string, updates: Partial<OrderItem>) => {
+    setLoading(true);
     try {
-      const response = await axios.put<{ order: OrderItem }>(
+      const response = await axios.put<{ success: boolean; order: OrderItem }>(
         `${import.meta.env.VITE_API_URL}/orders/${id}`,
         updates
       );
-      setOrders((prevOrders) =>
-        prevOrders.map((order) => (order._id === id ? response.data.order : order))
+
+      if (!response.data.success) {
+        throw new Error('Failed to update order');
+      }
+
+      setOrders((prev) =>
+        prev.map((order) => (order._id === id ? response.data.order : order))
       );
       toast.success('Order updated successfully');
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update order');
       toast.error('Failed to update order');
       console.error('Error updating order:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    setLoading(true);
     try {
-      const response = await axios.put<{ order: OrderItem }>(
+      const response = await axios.put<{ success: boolean; order: OrderItem }>(
         `${import.meta.env.VITE_API_URL}/orders/${id}/status`,
         { orderStatus: status }
       );
-      setOrders((prevOrders) =>
-        prevOrders.map((order) => (order._id === id ? response.data.order : order))
+
+      if (!response.data.success) {
+        throw new Error('Failed to update order status');
+      }
+
+      setOrders((prev) =>
+        prev.map((order) => (order._id === id ? response.data.order : order))
       );
       toast.success(`Order status updated to ${status}`);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to update order status');
       toast.error('Failed to update order status');
       console.error('Error updating order status:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteOrder = async (id: string) => {
+    setLoading(true);
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/orders/${id}`);
-      setOrders((prevOrders) => prevOrders.filter((order) => order._id !== id));
+      const response = await axios.delete<{ success: boolean }>(
+        `${import.meta.env.VITE_API_URL}/orders/${id}`
+      );
+
+      if (!response.data.success) {
+        throw new Error('Failed to delete order');
+      }
+
+      setOrders((prev) => prev.filter((order) => order._id !== id));
       toast.success('Order deleted successfully');
+      // Refresh pagination data
+      await fetchOrders(pagination.page, pagination.limit);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to delete order');
       toast.error('Failed to delete order');
       console.error('Error deleting order:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const getOrder = (id: string) => {
     return orders.find((order) => order._id === id);
@@ -173,17 +282,22 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <OrderContext.Provider
-      value={{
-        orders,
-        addOrder,
-        updateOrder,
-        updateOrderStatus,
-        deleteOrder,
-        getOrder,
-        fetchOrders
-      }}
-    >
-      {children}
-    </OrderContext.Provider>
+    value={{
+      orders,
+      loading,
+      error,
+      pagination,
+      addOrder,
+      updateOrder,
+      updateOrderStatus,
+      deleteOrder,
+      getOrder,
+      fetchOrders,
+      setPage,
+      setPageSize,
+    }}
+  >
+    {children}
+  </OrderContext.Provider>
   );
 };
