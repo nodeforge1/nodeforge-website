@@ -4,7 +4,6 @@ const axios = require("axios");
 const router = express.Router();
 const Order = require("../models/Order");
 const nodemailer = require("nodemailer");
-const { custom } = require("wagmi");
 const validator = require('validator');
 
 // Initialize Nodemailer transporter (example using Gmail)
