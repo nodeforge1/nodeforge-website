@@ -4,10 +4,8 @@ const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Order = require("../models/Order");
 const nodemailer = require("nodemailer");
-const getExchangeRate = require("../utils/getExchangeRate");
+
 const YOUR_DOMAIN = process.env.DOMAIN;
-const { v4: uuidv4 } = require("uuid");
-const paystack = require("../utils/paystack");
 
 // Set up the Nodemailer transporter (example uses Gmail)
 const transporter = nodemailer.createTransport({
@@ -23,69 +21,53 @@ router.post("/create-checkout-session", async (req, res) => {
   try {
     const { line_items, order_description, shippingInfo, customer } = req.body;
 
+
     if (!line_items || !Array.isArray(line_items) || line_items.length === 0) {
       return res.status(400).json({ message: "Invalid product details" });
     }
-
 
     // Calculate total price
     const totalAmountUSD = line_items.reduce((sum, item) => {
       return sum + (item.price_data.unit_amount / 100) * (item.quantity || 1);
     }, 0);
 
-    const rate = await getExchangeRate();
-    const amountInNaira = totalAmountUSD * rate; // Convert amount to Naira using the exchange rate
-    const amountInKobo = amountInNaira * 100; // Convert to Kobo for Paystack
     // Generate a unique order ID
     const orderID = "ORD" + Date.now();
 
+    // Create an order with 'Pending' status
+    const order = new Order({
+      orderID,
+      order_description,
+      shippingInfo,
+      customer,
+      totalPrice: totalAmountUSD,
+      orderStatus: "pending",
+      paymentMethod: "crypto",
+      subtotal: totalAmountUSD,
+      warranty: "2 years",
+      shippingPolicy: "Free shipping on orders above $500",
+      customerSupport: "24/7 Customer support via Live chat and Telegram",
+    });
 
-
-    // const savedOrder = await order.save();
+    const savedOrder = await order.save();
 
     // Create Stripe checkout session (passing email from shippingInfo)
-    // const session = await stripe.checkout.sessions.create({
-    //   submit_type: "pay",
-    //   line_items,
-    //   mode: "payment",
-    //   success_url: `${YOUR_DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
-    //   cancel_url: `${YOUR_DOMAIN}/canceled`,
-    //   metadata: { order_id: savedOrder._id.toString(), order_description },
-    //   customer_email: shippingInfo.email,
-    //   billing_address_collection: "auto",
-    // });
-
-    const response = await paystack.post("/transaction/initialize", {
-      email: customer.email,
-      amount: Math.ceil(amountInKobo), // Paystack requires the amount in kobo
-      reference: uuidv4(),
-      metadata: JSON.stringify(order_description),
-      currency: "NGN",
-      callback_url: `${process.env._2}/api/paystack/webhook`,
-      cancel_url: `${process.env.CLIENT_URL_2}/canceled`,
-      success_url: `${process.env.CLIENT_URL_2}/success`,
+    const session = await stripe.checkout.sessions.create({
+      submit_type: "pay",
+      line_items,
+      mode: "payment",
+      success_url: `${YOUR_DOMAIN}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${YOUR_DOMAIN}/canceled`,
+      metadata: { order_id: savedOrder._id.toString(), order_description },
+      customer_email: shippingInfo.email,
+      billing_address_collection: "auto",
     });
 
     // Update order with the Stripe session ID
-    // console.log(response.data);
-        // Create an order with 'Pending' status
-        const order = new Order({
-          orderID,
-          order_description,
-          shippingInfo,
-          customer,
-          totalPrice: totalAmountUSD,
-          orderStatus: "pending",
-          paymentMethod: "crypto",
-          subtotal: totalAmountUSD,
-          warranty: "2 years",
-          shippingPolicy: "Free shipping on orders above $500",
-          customerSupport: "24/7 Customer support via Live chat and Telegram",
-          paystack_reference: response.data.data.reference
-        });
-    await order.save();
+    savedOrder.stripe_session_id = session.id;
+    await savedOrder.save();
 
-    res.json({ url: response.data.data.authorization_url });
+    res.json({ url: session.url });
   } catch (error) {
     res.status(500).json({
       message: "Error creating checkout session",

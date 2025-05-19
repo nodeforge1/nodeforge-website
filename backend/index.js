@@ -54,19 +54,25 @@ app.use(session({
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 const StripePaymentRouter = require('./routes/StripePaymentRoutes');
 const NowPaymentsRouter = require('./routes/CryptoPaymentRoutes');
 const webhookRoutes = require('./routes/webhook');
-
+const rateRoutes = require('./routes/rateRoutes');
+const webhookRoutes2 = require('./routes/webhookRoutes');
 // Define other routes
 app.use("/api", productRoutes);
 app.use("/api", orderRoutes);
 app.use("/api", StripePaymentRouter);
 app.use("/api", NowPaymentsRouter);
+app.use("/api", paymentRoutes);
+app.use("/api", rateRoutes);
+app.use("/api", webhookRoutes2);
+// Admin routes
 app.use("/admin", adminRoutes);
 
 // Mount webhook route using raw body middleware
-app.use("/api/stripe-webhook", express.raw({ type: "application/json" }), webhookRoutes);
+app.use("/api/paystack", express.raw({ type: "application/json" }), webhookRoutes);
 
 // Root route
 app.get('/', (req, res) => {

@@ -56,6 +56,7 @@ const orderSchema = new mongoose.Schema(
       enum: ['card', 'paypal', 'crypto', 'bank_transfer'], 
       required: true 
     },
+    paymentId: { type: String },
     paymentStatus: { 
       type: String, 
       enum: ['pending', 'completed', 'failed', 'refunded'], 
@@ -73,7 +74,7 @@ const orderSchema = new mongoose.Schema(
       estimatedDelivery: { type: Date }
     },
     notes: { type: String },
-    stripe_session_id: { type: String },
+    paystack_reference: { type: String },
     metadata: { type: mongoose.Schema.Types.Mixed }
   },
   {

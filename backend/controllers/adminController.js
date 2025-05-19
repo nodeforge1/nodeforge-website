@@ -10,7 +10,6 @@ const ADMIN_CREDENTIALS = {
 // Admin login
 const adminLogin = (req, res) => {
   const { email, password } = req.body;
-  console.log(email, password);
 
   if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
     req.session.admin = true;

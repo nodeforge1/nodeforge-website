@@ -4,6 +4,7 @@ const axios = require("axios");
 const router = express.Router();
 const Order = require("../models/Order");
 const nodemailer = require("nodemailer");
+const { custom } = require("wagmi");
 const validator = require('validator');
 
 // Initialize Nodemailer transporter (example using Gmail)
@@ -34,13 +35,13 @@ router.post("/create-crypto-payment", async (req, res) => {
 
     const orderID = "CRYPTO-" + Date.now();
     const email = customer.email?.trim();
-    console.log("Email address:", email);
+    // console.log("Email address:", email);
     if (!validator.isEmail(email)) {
       // handle error
       console.error("Invalid email address");
       return res.status(400).json({ error: "Invalid email address" });
     }
-    console.log("Email address is valid:", email);
+    // console.log("Email address is valid:", email);
     const totalAmountUSD = line_items.reduce((sum, item) => {
       return sum + (item.price_data.unit_amount / 100) * (item.quantity || 1);
     }, 0);
@@ -97,7 +98,7 @@ router.post("/create-crypto-payment", async (req, res) => {
     // Save the payment ID in the order
     savedOrder.payment_id = response.data.id;
     await savedOrder.save();
-    console.log("Updated order with payment ID:", savedOrder);
+    // console.log("Updated order with payment ID:", savedOrder);
 
     res.json({
       invoice_url: `https://nowpayments.io/payment/?iid=${response.data.id}`,
@@ -149,7 +150,7 @@ router.post("/webhook", async (req, res) => {
     }
 
     await order.save();
-    console.log("Order status updated successfully:", order);
+    // console.log("Order status updated successfully:", order);
 
     // If payment is completed, send a confirmation email
     if (payment_status === "confirmed" || payment_status === "finished") {

@@ -27,7 +27,7 @@ const getProductById = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const { name, description, basePrice, image, specs, options } = req.body;
-    console.log(req.body)
+    // console.log(req.body)
     if (!name || !description || !basePrice || !image || !specs || !options) {
       return res.status(400).json({ message: 'All fields are required' });
     }
