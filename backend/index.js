@@ -28,18 +28,19 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 app.use(express.json());
-
+// console.log("beore")
 // Set up MongoDB session store
-// const store = new MongoDBStore({
-//   uri: process.env.MONGO_URI + 'Node',
-//   collection: 'sessions',
-// });
+const store = new MongoDBStore({
+  uri: process.env.MONGO_URI + 'Node',
+  collection: 'sessions',
+});
 
-// store.on('error', (error) => console.error("❌ MongoDB Store Error:", error));
+// console.log("after")
+store.on('error', (error) => console.error("❌ MongoDB Store Error:", error));
 
 // Set up session middleware
 app.use(session({
-  // store,
+  store,
   secret: process.env.SESSION_SECRET || "default_secret",
   resave: false,
   saveUninitialized: false,
